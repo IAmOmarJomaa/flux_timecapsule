@@ -508,7 +508,7 @@ class FluxNetworkTrainer(train_network.NetworkTrainer):
 
     def prepare_unet_with_accelerator(
         self, args: argparse.Namespace, accelerator: Accelerator, unet: torch.nn.Module) -> torch.nn.Module:
-    
+        
         
         # CRITICAL FIX: Force gradients on inputs for NF4/Quantized models
         # This prevents the "Flatline" where loss calculates but backprop fails.

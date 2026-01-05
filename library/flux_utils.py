@@ -137,7 +137,9 @@ def load_flow_model(
         for key in keys_to_rename:
             new_key = key.replace("model.diffusion_model.", "")
             sd[new_key] = sd.pop(key)
-        logger.info(f"Sanitized {len(keys_to_rename)} keys (Flux mode).")
+        
+        if len(keys_to_rename) > 0:
+            logger.info(f"Sanitized {len(keys_to_rename)} keys by removing 'model.diffusion_model.' prefix (Flux mode).")
 
         info = model.load_state_dict(sd, strict=False, assign=True)
         logger.info(f"Loaded Flux: {info}")
@@ -157,12 +159,14 @@ def load_flow_model(
         logger.info(f"Loading state dict from {ckpt_path}")
         sd = load_safetensors(ckpt_path, device=str(device), disable_mmap=disable_mmap, dtype=dtype)
 
-        # CRITICAL FIX 1: FORCE STRIP PREFIXES (FLUX)
+        # CRITICAL FIX 2: FORCE STRIP PREFIXES (CHROMA)
         keys_to_rename = [k for k in sd.keys() if k.startswith("model.diffusion_model.")]
         for key in keys_to_rename:
             new_key = key.replace("model.diffusion_model.", "")
             sd[new_key] = sd.pop(key)
-        logger.info(f"Sanitized {len(keys_to_rename)} keys (Flux mode).")
+        
+        if len(keys_to_rename) > 0:
+            logger.info(f"Sanitized {len(keys_to_rename)} keys by removing 'model.diffusion_model.' prefix (Chroma mode).")
 
         info = model.load_state_dict(sd, strict=False, assign=True)
         logger.info(f"Loaded Chroma: {info}")
@@ -172,7 +176,7 @@ def load_flow_model(
     else:
         raise ValueError(f"Unsupported model_type: {model_type}. Supported types are 'flux' and 'chroma'.")
 
-
+        
 def load_ae(
     ckpt_path: str, dtype: torch.dtype, device: Union[str, torch.device], disable_mmap: bool = False
 ) -> flux_models.AutoEncoder:
