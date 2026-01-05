@@ -27,24 +27,20 @@ MODEL_VERSION_CHROMA = "chroma"
 
 
 def analyze_checkpoint_state(ckpt_path: str) -> Tuple[bool, bool, Tuple[int, int], List[str]]:
-    """
-    チェックポイントの状態を分析し、DiffusersかBFLか、devかschnellか、ブロック数を計算して返す。
-
-    Args:
-        ckpt_path (str): チェックポイントファイルまたはディレクトリのパス。
-
-    Returns:
-        Tuple[bool, bool, Tuple[int, int], List[str]]:
-            - bool: Diffusersかどうかを示すフラグ。
-            - bool: Schnellかどうかを示すフラグ。
-            - Tuple[int, int]: ダブルブロックとシングルブロックの数。
-            - List[str]: チェックポイントに含まれるキーのリスト。
-    """
-    # check the state dict: Diffusers or BFL, dev or schnell, number of blocks
-    logger.info(f"Checking the state dict: Diffusers or BFL, dev or schnell")
+    # 1. Clean the path first
+    ckpt_path = ckpt_path.strip('"').strip("'")
+    
+    # 2. Check if it's a directory
+    if os.path.isdir(ckpt_path):
+        potential_path = os.path.join(ckpt_path, "transformer", "diffusion_pytorch_model-00001-of-00003.safetensors")
+        if os.path.exists(potential_path):
+            ckpt_path = potential_path
 
     if os.path.isdir(ckpt_path):  # if ckpt_path is a directory, it is Diffusers
-        ckpt_path = os.path.join(ckpt_path, "transformer", "diffusion_pytorch_model-00001-of-00003.safetensors")
+        # Check for standard multi-part safetensors
+        potential_path = os.path.join(ckpt_path, "transformer", "diffusion_pytorch_model-00001-of-00003.safetensors")
+        if os.path.exists(potential_path):
+            ckpt_path = potential_path
     if "00001-of-00003" in ckpt_path:
         ckpt_paths = [ckpt_path.replace("00001-of-00003", f"0000{i}-of-00003") for i in range(1, 4)]
     else:
@@ -176,7 +172,7 @@ def load_flow_model(
     else:
         raise ValueError(f"Unsupported model_type: {model_type}. Supported types are 'flux' and 'chroma'.")
 
-        
+
 def load_ae(
     ckpt_path: str, dtype: torch.dtype, device: Union[str, torch.device], disable_mmap: bool = False
 ) -> flux_models.AutoEncoder:
